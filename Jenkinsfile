@@ -4,6 +4,8 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
         IMAGE_NAME = 'ishikaa24/react-vite-jenkins-app'
         TAG = "${BUILD_NUMBER}"
+        AWS_REGION = 'ap-south-1'
+        EKS_CLUSTER_NAME = 'jenkins-eks-cluster'
     }
     stages {
         stage('Checkout Source Code') {
@@ -38,13 +40,21 @@ pipeline {
         }
         stage('Update Kubernetes Deployment') {
             steps {
-                sh "sed -i 's|image:.*|image: ${IMAGE_NAME}:${TAG}|g' k8s-deployment.yaml"
-                sh 'kubectl apply -f k8s-deployment.yaml --validate=false'
+                script {
+                    // Update image tag in the deployment file safely
+                    sh "sed -i 's|image:.*|image: ${IMAGE_NAME}:${TAG}|g' k8s-deployment.yaml"
+                    
+                    // Force refresh the EKS cluster credentials for whichever system user Jenkins runs as
+                    sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
+                    
+                    // Apply with validation turned off to prevent schema rejection errors
+                    sh 'kubectl apply -f k8s-deployment.yaml --validate=false'
+                }
             }
         }
         stage('Verify Deployment Status') {
             steps {
-                sh 'kubectl rollout status deployment/react-vite-app'
+                sh 'kubectl rollout status deployment/react-vite-app --timeout=120s'
                 sh 'kubectl get pods'
                 sh 'kubectl get svc'
             }
