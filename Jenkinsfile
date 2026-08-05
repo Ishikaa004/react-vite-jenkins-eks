@@ -63,9 +63,17 @@ pipeline {
 
         stage('Verify Deployment Status') {
             steps {
-                sh 'kubectl rollout status deployment/react-vite-app --timeout=120s'
-                sh 'kubectl get pods'
-                sh 'kubectl get svc'
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-credentials'
+                ]]) {
+
+                    sh "aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}"
+
+                    sh 'kubectl rollout status deployment/react-vite-app --timeout=120s'
+                    sh 'kubectl get pods'
+                    sh 'kubectl get svc'
+                }
             }
         }
     }
