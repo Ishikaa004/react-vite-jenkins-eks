@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
-        IMAGE_NAME = 'admin/react-vite-jenkins-app'
+        IMAGE_NAME = 'ishika24/react-vite-jenkins-app'
         TAG = "${BUILD_NUMBER}"
     }
     stages {
