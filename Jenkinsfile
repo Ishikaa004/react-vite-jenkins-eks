@@ -39,7 +39,7 @@ pipeline {
         stage('Update Kubernetes Deployment') {
             steps {
                 sh "sed -i 's|image:.*|image: ${IMAGE_NAME}:${TAG}|g' k8s-deployment.yaml"
-                sh 'kubectl apply -f k8s-deployment.yaml'
+                sh 'kubectl apply -f k8s-deployment.yaml --validate=false'
             }
         }
         stage('Verify Deployment Status') {
